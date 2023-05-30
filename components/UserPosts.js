@@ -15,6 +15,7 @@ import axios from "axios";
 const UserPosts = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
   const [like, setLike] = useState(0);
+  const [dislike, setdislike] = useState(0);
 
   useEffect(() => {
     fetchPosts();
@@ -23,25 +24,60 @@ const UserPosts = ({ navigation }) => {
   const fetchPosts = async () => {
     try {
       const response = await axios.get("http://localhost:8000/api/user/posts");
+      console.log(response.data);
       setPosts(response.data);
     } catch (error) {
       console.log(error);
     }
   };
 
-  const handleLikePress = () => {
-    setLike(like + 1);
+  console.log(`wwwwwwwwwwwwwwwwww`);
+  const handleLikePress = async (id) => {
+    console.log(id);
+    try {
+      const response = await axios.post(
+        `http://localhost:8000/api/user/posts/${id}/like`
+      );
+
+      // Update the like count in the posts state
+      const updatedPosts = posts.map((post) => {
+        if (post._id === id) {
+          return {
+            ...post,
+            likes: response.data.likes,
+          };
+        }
+        return post;
+      });
+
+      setPosts(updatedPosts);
+    } catch (error) {
+      console.log("Error liking post:", error);
+      alert("Error liking post: " + error.message);
+    }
   };
 
   const handleDislikePress = async (id) => {
+    console.log(id);
     try {
       const response = await axios.post(
-        `http://localhost:8000/api/posts/${id}/dislike`
+        `http://localhost:8000/api/user/posts/${id}/dislike`
       );
-      console.log(response.data);
-      fetchPosts(); // Refresh posts after dislike
+
+      // Update the like count in the posts state
+      const updatedPostsdislike = posts.map((post) => {
+        if (post._id === id) {
+          return {
+            ...post,
+            dislikes: response.data.dislikes,
+          };
+        }
+        return post;
+      });
+
+      setPosts(updatedPostsdislike);
     } catch (error) {
-      console.log("Error disliking post:", error.message);
+      console.log("Error disliking post:", error);
       alert("Error disliking post: " + error.message);
     }
   };
@@ -82,7 +118,10 @@ const UserPosts = ({ navigation }) => {
         <TouchableOpacity style={styles.photoButton}>
           <Image source={{ uri: item.photo }} style={styles.photo} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleLikePress}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => handleLikePress(item._id)}
+        >
           <Ionicons
             name="heart-outline"
             size={24}
@@ -91,9 +130,10 @@ const UserPosts = ({ navigation }) => {
           <Text
             style={[styles.buttonText, { color: like > 0 ? "red" : "black" }]}
           >
-            Like {like}
+            Like {item.likes}
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.button}
           onPress={() => handleDislikePress(item._id)}
@@ -142,6 +182,7 @@ const UserPosts = ({ navigation }) => {
         renderItem={renderPost}
         keyExtractor={(item) => item._id}
       />
+
       <TouchableOpacity style={styles.addButton} onPress={handleAddPost}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
